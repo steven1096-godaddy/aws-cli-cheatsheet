@@ -302,12 +302,12 @@ https://my-awesome-new-bucket.s3.amazonaws.com/business-reports.pdf?AWSAccessKey
 ```
 
 ## SSM
-#### List all ssm parameters
+#### List Of SSM Parameters
 ```bash
 aws ssm describe-parameters
 ```
 
-#### Search for a particular SSM parameter name
+#### Search For a Particular SSM parameter name
 ```bash
 # replace "rds" with your search query (ie: apache, nginx, builder, etc)
 aws ssm describe-parameters|jq -r '.Parameters[] | .Name'|grep -i rds
