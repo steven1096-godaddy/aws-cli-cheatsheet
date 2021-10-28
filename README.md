@@ -1,11 +1,13 @@
-### :wrench: Tools Required
 
-* aws https://aws.amazon.com/cli/
-* jq https://stedolan.github.io/jq/
+# AWS CLI Cheatsheet
 
-:warning: Disclaimer: All Resource, Account, ARN, Hostname etc are generated using [Faker](https://faker.readthedocs.io/en/master). They do not match any real user data.
+## Description 
 
-### :loudspeaker: Table of Contents
+A collection of some common AWS CLI calls I use regularly. It requires the use of the AWS Command Line tool & the Bash JQ library. 
+
+
+
+### Index
 
 - [EC2](#ec2)
     + [List Instance ID, Type and Name](#list-instance-id-type-and-name)
@@ -31,6 +33,11 @@
     + [Download Bucket to Local](#download-bucket-to-local)
     + [Upload Local Directory to Bucket](#upload-local-directory-to-bucket)
     + [Share S3 Object without Public Access](#share-s3-object-without-public-access)
+- [SSM](#ssm)
+    + [List of SSM Parameter Names](#list-of-ssm-parameter-names)
+    + [Read SSM Parameter Value](#read-ssm-parameter-value)
+    + [List of ELB Target Group ARNs](#list-of-elb-target-group-arns)
+    + [Find Instances for a Target Group](#find-instances-for-a-target-group)
 - [API Gateway](#api-gateway)
     + [List of API Gateway IDs and Names](#list-of-api-gateway-ids-and-names)
     + [List of API Gateway Keys](#list-of-api-gateway-keys)
@@ -89,6 +96,7 @@
     + [Purge Queue](#purge-queue)
     + [Delete Queue](#delete-queue)
 - [CloudFront](#cloudfront)
+    + [Seach for CloudFront Distribution by Domain Name](#search-for-cloudfront-distribution-by-name)
     + [List of CloudFront Distributions and Origins](#list-of-cloudfront-distributions-and-origins)
     + [Create Cache Invalidation](#create-cache-invalidation)
     + [Check Cache Invalidation Status](#check-cache-invalidation-status)
@@ -124,15 +132,6 @@
 
 ### :information_source: Pro Tip!
 
-:point_right: If you have multiple AWS Accounts, you can use bash alias like the following. So you no longer need to pass `--profile` to `aws` tool.
-
-```bash
-alias aws-prod="aws --profile work-prod"
-alias aws-dev="aws --profile work-dev"
-alias aws-self="aws --profile personal"
-alias aws="aws --profile work-dev"
-```
-
 :point_right: To format `aws` command output into tables, you can pipe output to `column -t`.
 
 ```
@@ -144,6 +143,8 @@ i-0b3b5128445a332db t2.nano robinson.com
 i-0f112d652ecf13dac  c3.x2large  fisher.com
 i-0b3b5128445a332db  t2.nano     robinson.com
 ```
+
+:point_right: Review the CLI Command Reference docs, in particular the output section, to get an idea of the response body, while working with JQ to parse through the output. 
 
 ## EC2
 
@@ -298,6 +299,29 @@ aws s3 sync /home/minhaz/Downloads s3://my-awesome-new-bucket/
 ```bash
 aws s3 presign s3://my-awesome-new-bucket/business-reports.pdf --expires-in 3600
 https://my-awesome-new-bucket.s3.amazonaws.com/business-reports.pdf?AWSAccessKeyId=AKISUENSAKSIEUAA&Expires=1582876994&Signature=kizOEA93kaIHw7uv25wSFIKLmAx
+```
+
+## SSM
+#### List all ssm parameters
+```bash
+aws ssm describe-parameters
+```
+
+#### Search for a particular SSM parameter name
+```bash
+# replace "rds" with your search query (ie: apache, nginx, builder, etc)
+aws ssm describe-parameters|jq -r '.Parameters[] | .Name'|grep -i rds
+/customer/Prod/RDS/MariaDB/password
+/customer/Prod/RDS/Maridb/password
+/customer/Staging/RDS/MariaDB/password
+/customer/Staging/RDS/Maridb/password
+```
+
+#### Read SSM Parameter Value
+```bash
+# pass the --with-decryption flag for SecureString types
+aws ssm get-parameter --with-decryption --name /thumplocal/Prod/RDS/MariaDB/password | jq -r '.Parameter | .Value'
+P@$$w0ro1321
 ```
 
 ## API Gateway
@@ -686,6 +710,14 @@ aws sqs delete-queue --queue-url https://ap-southeast-1.queue.amazonaws.com/9876
 
 ## CloudFront
 
+#### Search for the CF Distro by Domain Name
+```bash
+# replace "example.com" with the fqdn you want to search for
+aws cloudfront list-distributions | jq -r '.DistributionList.Items[] | .Aliases.Items[0]+"  CF: "+.DomainName' | grep -i example.com
+www.example.com  CF: dl61jejkdig2d.cloudfront.net
+staging.example.com  CF: d177y1wtqodsdf.cloudfront.net
+```
+
 #### List of CloudFront Distributions and Origins
 ```bash
 aws cloudfront list-distributions | jq -r '.DistributionList.Items[] | .DomainName+" "+.Origins.Items[0].DomainName'
@@ -866,3 +898,14 @@ aws iam list-groups-for-user --user-name qa-bob
 aws iam detach-group-policy --group-name business-ro --policy-arn arn:aws:iam::aws:policy/DynamoDBFullAccess
 aws iam attach-group-policy --group-name business-ro --policy-arn arn:aws:iam::aws:policy/DynamoDBFullAccess
 ```
+
+
+## Contributing
+
+Please make a pull request for any usefull additions you would like added.
+
+
+## Acknowledgments
+
+Inspiration for this collection :
+[mdminhazulhaque's awesome cli cheatsheet](https://github.com/mdminhazulhaque/aws-cli-cheatsheet#ec2)
