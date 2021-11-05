@@ -153,22 +153,18 @@ i-0b3b5128445a332db  t2.nano     robinson.com
 #### List Instance ID, Type and Name
 ```bash
 aws ec2 --region ${AWS_REGION} describe-instances | jq -r '.Reservations[].Instances[]|.InstanceId+" "+.InstanceType+" "+(.Tags[] | select(.Key == "Name").Value)'
-i-0f112d652ecf13dac  c3.xlarge  fisher.com
-i-0b3b5128445a332db  t2.nano    robinson.com
-i-0d1c1cf4e980ac593  t2.micro   nolan.com
-i-004ee6b792c3b6914  t2.nano    grimes-green.net
-i-00f11e8e33c971058  t2.nano    garrett.com
+i-0f112d652ecf13dac  c3.xlarge  example-prod-asg
+i-0b3b5128445a332db  c3.xlarge  example-prod-asg
+i-0d1c1cf4e980ac593  t2.micro   example-staging-asg
 ```
 
 #### List Instances with Public IP Address and Name
 :point_right: Tip: You can directly put this to your `/etc/hosts`
 ```bash
 aws ec2 --region ${AWS_REGION} describe-instances --query 'Reservations[*].Instances[?not_null(PublicIpAddress)]' | jq -r '.[][]|.PublicIpAddress+" "+(.Tags[]|select(.Key=="Name").Value)'
-223.64.72.64    fisher.com
-198.82.207.161  robinson.com
-182.139.20.233  nolan.com
-153.134.83.44   grimes-green.net
-202.32.63.121   garrett.com
+223.64.72.64    example-prod-asg
+198.82.207.161  example-prod-asg
+182.139.20.233  example-staging-asg
 ```
 
 #### Destroy an Instance By ID
