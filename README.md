@@ -34,10 +34,8 @@ A collection of some common AWS CLI calls I use regularly. It requires the use o
     + [Upload Local Directory to Bucket](#upload-local-directory-to-bucket)
     + [Share S3 Object without Public Access](#share-s3-object-without-public-access)
 - [SSM](#ssm)
-    + [List of SSM Parameter Names](#list-of-ssm-parameter-names)
+    + [List SSM Parameter Names](#list-ssm-parameter-names)
     + [Read SSM Parameter Value](#read-ssm-parameter-value)
-    + [List of ELB Target Group ARNs](#list-of-elb-target-group-arns)
-    + [Find Instances for a Target Group](#find-instances-for-a-target-group)
 - [API Gateway](#api-gateway)
     + [List of API Gateway IDs and Names](#list-of-api-gateway-ids-and-names)
     + [List of API Gateway Keys](#list-of-api-gateway-keys)
@@ -150,7 +148,7 @@ i-0b3b5128445a332db  t2.nano     robinson.com
 
 #### List Instance ID, Type and Name
 ```bash
-aws ec2 describe-instances | jq -r '.Reservations[].Instances[]|.InstanceId+" "+.InstanceType+" "+(.Tags[] | select(.Key == "Name").Value)'
+aws ec2 --region ${AWS_REGION} describe-instances | jq -r '.Reservations[].Instances[]|.InstanceId+" "+.InstanceType+" "+(.Tags[] | select(.Key == "Name").Value)'
 i-0f112d652ecf13dac  c3.xlarge  fisher.com
 i-0b3b5128445a332db  t2.nano    robinson.com
 i-0d1c1cf4e980ac593  t2.micro   nolan.com
@@ -161,7 +159,7 @@ i-00f11e8e33c971058  t2.nano    garrett.com
 #### List Instances with Public IP Address and Name
 :point_right: Tip: You can directly put this to your `/etc/hosts`
 ```bash
-aws ec2 describe-instances --query 'Reservations[*].Instances[?not_null(PublicIpAddress)]' | jq -r '.[][]|.PublicIpAddress+" "+(.Tags[]|select(.Key=="Name").Value)'
+aws ec2 --region ${AWS_REGION} describe-instances --query 'Reservations[*].Instances[?not_null(PublicIpAddress)]' | jq -r '.[][]|.PublicIpAddress+" "+(.Tags[]|select(.Key=="Name").Value)'
 223.64.72.64    fisher.com
 198.82.207.161  robinson.com
 182.139.20.233  nolan.com
@@ -171,7 +169,7 @@ aws ec2 describe-instances --query 'Reservations[*].Instances[?not_null(PublicIp
 
 #### List of VPCs and CIDR IP Block
 ```bash
-aws ec2 describe-vpcs | jq -r '.Vpcs[]|.VpcId+" "+(.Tags[]|select(.Key=="Name").Value)+" "+.CidrBlock'
+aws ec2 --region ${AWS_REGION} describe-vpcs | jq -r '.Vpcs[]|.VpcId+" "+(.Tags[]|select(.Key=="Name").Value)+" "+.CidrBlock'
 vpc-0d1c1cf4e980ac593  frontend-vpc  10.0.0.0/16
 vpc-00f11e8e33c971058  backend-vpc   172.31.0.0/16
 ```
@@ -186,7 +184,7 @@ subnet-02a63c67684d8deed  10.0.144.0/20  Public Subnet 2
 
 #### List of Security Groups
 ```bash
-aws ec2 describe-security-groups | jq -r '.SecurityGroups[]|.GroupId+" "+.GroupName'
+aws ec2 --region ${AWS_REGION} describe-security-groups | jq -r '.SecurityGroups[]|.GroupId+" "+.GroupName'
 sg-02a63c67684d8deed  backend-db
 sg-0dae5d4daa47fe4a2  backend-redis
 sg-0a56bff7b12264282  frontend-lb
@@ -204,12 +202,12 @@ sg-0dae5d4daa47fe4a2  backend-redis
 #### Edit Security Groups of an Instance
 :point_right: You have to provide existing Security Group IDs as well
 ```bash
-aws ec2 modify-instance-attribute --instance-id i-0dae5d4daa47fe4a2 --groups sg-02a63c67684d8deed sg-0dae5d4daa47fe4a2
+aws ec2 --region ${AWS_REGION} modify-instance-attribute --instance-id i-0dae5d4daa47fe4a2 --groups sg-02a63c67684d8deed sg-0dae5d4daa47fe4a2
 ```
 
 #### Print Security Group Rules as FromAddress and ToPort
 ```bash
-aws ec2 describe-security-groups --group-ids sg-02a63c67684d8deed | jq -r '.SecurityGroups[].IpPermissions[]|. as $parent|(.IpRanges[].CidrIp+" "+($parent.ToPort|tostring))'
+aws ec2 --region ${AWS_REGION} describe-security-groups --group-ids sg-02a63c67684d8deed | jq -r '.SecurityGroups[].IpPermissions[]|. as $parent|(.IpRanges[].CidrIp+" "+($parent.ToPort|tostring))'
 223.64.72.64/32    3306
 198.82.207.161/32  3306
 168.244.58.160/32  3306
@@ -302,7 +300,8 @@ https://my-awesome-new-bucket.s3.amazonaws.com/business-reports.pdf?AWSAccessKey
 ```
 
 ## SSM
-#### List Of SSM Parameters
+
+#### List SSM parameters ames
 ```bash
 aws ssm describe-parameters
 ```
@@ -320,9 +319,31 @@ aws ssm describe-parameters|jq -r '.Parameters[] | .Name'|grep -i rds
 #### Read SSM Parameter Value
 ```bash
 # pass the --with-decryption flag for SecureString types
-aws ssm get-parameter --with-decryption --name /thumplocal/Prod/RDS/MariaDB/password | jq -r '.Parameter | .Value'
-P@$$w0ro1321
+aws ssm get-parameter --with-decryption --name /customer/Prod/RDS/MariaDB/password | jq -r '"Parameter Name: "+.Parameter.Name+"\n\nValue: "+.Parameter.Value'
+Name: /customer/Prod/RDS/MariaDB/password 
+
+Value: P@$$w0ro1321
 ```
+
+
+#### Create New SSM Parameter
+```bash
+# Example RDS parameter generation
+aws ssm --region ${AWS_REGION} put-parameter --name "/Customer/Environment/RDS/MariaDB/password" --type "SecureString" --value "S3cretP@wW0rD"
+{
+    "Version": 2,
+    "Tier": "Standard"
+}
+```
+
+#### Delete An SSM Parameter
+```bash
+aws ssm --region ${AWS_REGION} delete-parameter --name "/Customer/Environment/RDS/MariaDB/password"
+
+# This command produces no output.
+
+```
+
 
 ## API Gateway
 
@@ -518,10 +539,14 @@ aws logs describe-log-groups|jq -r '.logGroups[]| .logGroupName'| grep build
 
 #### List all CloudWatch Log Streams for a Log Group
 ```bash
-aws logs describe-log-streams --log-group-name /aws/imagebuilder/customer-Prodvault-ASG | jq -r '.logStreams[] | .logStr
-eamName'
+aws logs describe-log-streams --log-group-name /aws/imagebuilder/customer-Prodvault-ASG | jq -r '.logStreams[] | .logStreamName'
 1.0.99/1
 1.0.99/2
+```
+
+#### List all Log events in Log Group
+```bash
+
 ```
 
 #### List of CloudWatch Alarms and Status
@@ -562,7 +587,7 @@ aws route53 list-hosted-zones | jq -r '.HostedZones[]|.Id+" "+.Name'
 #### List Records for a Domain (Zone)
 
 ```bash
-aws route53 list-resource-record-sets --hosted-zone-id /hostedzone/Z08242601YGXFZ5Z94BU0 | jq -r '.ResourceRecordSets[]| if (.AliasTarget!=null) then .Type+" "+.Name+" "+.AliasTarget.DNSName else .Type+" "+.Name+" "+.ResourceRecords[].Value end'
+aws route53 list-resource-record-sets --hosted-zone-id /hostedzone/Z04484551CC5ZCTOH500K | jq -r '.ResourceRecordSets[]| if (.AliasTarget!=null) then .Type+" "+.Name+" "+.AliasTarget.DNSName else .Type+" "+.Name+" "+.ResourceRecords[].Value end'
 A      mysite.com.              dualstack.mysite-lb-967522168.ap-southeast-1.elb.amazonaws.com.
 A      mysite.com.              11.22.33.44
 TXT    _amazonses.mysite.com.   6c6d761371f0480bbe60de0df275b550
