@@ -12,6 +12,8 @@ A collection of some common AWS CLI calls I use regularly. It requires the use o
 - [EC2](#ec2)
     + [List Instance ID, Type and Name](#list-instance-id-type-and-name)
     + [List Instances with Public IP Address and Name](#list-instances-with-public-ip-address-and-name)
+    + [Destroy an Instance By ID](#destroy-an-instance-by-id)
+    Destroy an Instance By ID
     + [List of VPCs and CIDR IP Block](#list-of-vpcs-and-cidr-ip-block)
     + [List of Subnets for a VPC](#list-of-subnets-for-a-vpc)
     + [List of Security Groups](#list-of-security-groups)
@@ -167,6 +169,26 @@ aws ec2 --region ${AWS_REGION} describe-instances --query 'Reservations[*].Insta
 182.139.20.233  nolan.com
 153.134.83.44   grimes-green.net
 202.32.63.121   garrett.com
+```
+
+#### Destroy an Instance By ID
+```bash
+aws ec2 --region ${AWS_REGION} terminate-instances --instance-ids i-0bfe8ef13649b77bf
+{
+    "TerminatingInstances": [
+        {
+            "CurrentState": {
+                "Code": 32,
+                "Name": "shutting-down"
+            },
+            "InstanceId": "i-0bfe8ef13649b77bf",
+            "PreviousState": {
+                "Code": 16,
+                "Name": "running"
+            }
+        }
+    ]
+}
 ```
 
 #### List of VPCs and CIDR IP Block
