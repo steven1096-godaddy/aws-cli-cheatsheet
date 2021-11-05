@@ -73,6 +73,8 @@ A collection of some common AWS CLI calls I use regularly. It requires the use o
 - [Route53](#route53)
     + [List Domains](#list-domains)
     + [List Records for a Domain (Zone)](#list-records-for-a-domain-zone)
+    + [List Records for a Domain Better Version](#list-records-for-a-domain-better-version)
+
 - [SNS](#sns)
     + [List of SNS Topics](#list-of-sns-topics)
     + [List of SNS Topic and related Subscriptions](#list-of-sns-topic-and-related-subscriptions)
@@ -562,13 +564,11 @@ userdata-write     AWS/DynamoDB        OK
 ```
 
 #### Create Alarm for EC2 High CPUUtilization
-
 ```bash
 aws cloudwatch put-metric-alarm --alarm-name high-cpu-usage --alarm-description "Alarm when CPU exceeds 70 percent" --metric-name CPUUtilization --namespace AWS/EC2 --statistic Average --period 300 --threshold 70 --comparison-operator GreaterThanThreshold  --dimensions "Name=InstanceId,Value=i-123456789" --evaluation-periods 2 --alarm-actions arn:aws:sns:ap-southeast-1:987654321:System-Alerts --unit Percent
 ```
 
 #### Create Alarm for EC2 High StatusCheckFailed_Instance
-
 ```bash
 aws cloudwatch put-metric-alarm --alarm-name EC2-StatusCheckFailed-AppServer --alarm-description "EC2 StatusCheckFailed for AppServer" --metric-name StatusCheckFailed_Instance --namespace AWS/EC2 --statistic Average --period 60 --threshold 0 --comparison-operator GreaterThanThreshold  --dimensions "Name=InstanceId,Value=i-123456789" --evaluation-periods 3 --alarm-actions arn:aws:sns:ap-southeast-1:987654321:System-Alerts --unit Count
 ```
@@ -576,7 +576,6 @@ aws cloudwatch put-metric-alarm --alarm-name EC2-StatusCheckFailed-AppServer --a
 ## Route53
 
 #### List Domains
-
 ```bash
 aws route53 list-hosted-zones | jq -r '.HostedZones[]|.Id+" "+.Name'
 /hostedzone/ZEB1PAH4U mysite.com.
@@ -585,7 +584,6 @@ aws route53 list-hosted-zones | jq -r '.HostedZones[]|.Id+" "+.Name'
 ```
 
 #### List Records for a Domain (Zone)
-
 ```bash
 aws route53 list-resource-record-sets --hosted-zone-id /hostedzone/Z04484551CC5ZCTOH500K | jq -r '.ResourceRecordSets[]| if (.AliasTarget!=null) then .Type+" "+.Name+" "+.AliasTarget.DNSName else .Type+" "+.Name+" "+.ResourceRecords[].Value end'
 A      mysite.com.              dualstack.mysite-lb-967522168.ap-southeast-1.elb.amazonaws.com.
@@ -594,6 +592,16 @@ TXT    _amazonses.mysite.com.   6c6d761371f0480bbe60de0df275b550
 A      test.mysite.com.         55.66.77.88
 CNAME  www.mysite.com.          mysite.com
 ```
+
+#### List Records for a Domain - Better Version
+```bash
+# Change example.com to the domain you're searching for.
+
+id=$(aws route53 list-hosted-zones | jq -r '.HostedZones[]|.Id+" "+.Name' | grep "example.com" | awk '{print $1}') && aws route53 list-resource-record-sets --hosted-zone-id $id | jq -r '.ResourceRecordSets[]| if (.AliasTarget!=null) then .Type+" "+.Name+" "+.AliasTarget.DNSName else .Type+" "+.Name+" "+.ResourceRecords[].Value end'
+
+
+```
+
 
 ## SNS
 
