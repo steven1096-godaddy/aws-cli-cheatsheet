@@ -764,9 +764,10 @@ aws sqs delete-queue --queue-url https://ap-southeast-1.queue.amazonaws.com/9876
 #### Search for the CF Distro by Domain Name
 ```bash
 # replace "example.com" with the fqdn you want to search for
-aws cloudfront list-distributions | jq -r '.DistributionList.Items[] | .Aliases.Items[0]+"  CF: "+.DomainName' | grep -i example.com
-www.example.com  CF: dl61jejkdig2d.cloudfront.net
-staging.example.com  CF: d177y1wtqodsdf.cloudfront.net
+ aws cloudfront list-distributions | jq -r '.DistributionList.Items[] | .Aliases.Items[0]+"  CF: "+.DomainName+"  ID: "+.Id'| grep -i example.com
+
+www.example.com  CF: dl61jejkdig2d.cloudfront.net  ID: F2L66EI0NA8OCK
+staging.example.com  CF: d177y1wtqodsdf.cloudfront.net  ID: G2L44EI0NA8ERF
 ```
 
 #### List of CloudFront Distributions and Origins
