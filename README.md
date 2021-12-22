@@ -69,6 +69,9 @@ A collection of some common AWS CLI calls I use regularly. It requires the use o
 - [Cloudwatch](#cloudwatch)
     + [List all Cloudwatch Log Groups](#list-all-cloudwatch-log-groups)
     + [List all CloudWatch Log Streams for a Log Group](#list-all-cloudwatch-log-streams-for-a-log-group)
+    + [List of CloudWatch Metric Namespaces](#list-of-cloudwatch-metric-namespaces)
+    + [List of Unique CloudWatch Metrics by namespace](#list-of-unique-cloudwatch-metrics-by-namespace)
+    + [Display Data For Metric Group](#display-data-for-metric-group)
     + [List of CloudWatch Alarms and Status](#list-of-cloudwatch-alarms-and-status)
     + [Create Alarm for EC2 High CPUUtilization](#create-alarm-for-ec2-high-cpuutilization)
     + [Create Alarm for EC2 High StatusCheckFailed_Instance](#create-alarm-for-ec2-high-statuscheckfailed_instance)
@@ -523,6 +526,93 @@ eamName'
 1.0.99/1
 1.0.99/2
 ```
+
+#### List of CloudWatch Metric Namespaces
+```bash
+aws cloudwatch list-metrics --no-paginate | jq -r '.Metrics[] | .Namespace'| sort | uniq
+AWS/AutoScaling
+AWS/Backup
+AWS/DynamoDB
+AWS/EBS
+AWS/EC2
+AWS/EFS
+AWS/Lambda
+MT/CUSTOM
+..
+.
+```
+
+#### List of Unique CloudWatch Metrics by namespace
+```bash
+aws cloudwatch list-metrics --namespace 'AWS/EC2' --no-paginate | jq -r '.Metrics[] | .MetricName' | sort | uniq
+CPUCreditBalance
+CPUCreditUsage
+CPUSurplusCreditBalance
+CPUSurplusCreditsCharged
+CPUUtilization
+DiskReadBytes
+DiskReadOps
+DiskWriteBytes
+..
+.
+```
+
+
+#### Display Data For Metric Group
+
+```json
+// queryfile.json
+
+// We're using a json input in this example. Where we 
+// are querying the average CPU consumption in the prod-asg
+
+{
+    "MetricDataQueries": [
+        {
+            "Id": "cliec2cpu",
+            "MetricStat": {
+                "Metric": {
+                    "Namespace": "AWS/EC2",
+                    "MetricName": "CPUUtilization",
+                    "Dimensions": [
+                        {
+                            "Name": "AutoScalingGroupName",
+                            "Value": "customer-prod-asg"
+                        }
+                    ]
+                },
+                "Period": 60,
+                "Stat": "Average"
+            },
+            "Label": "cliec2cpu",
+            "ReturnData": true
+        }
+    ],
+    "StartTime": "2021-12-20T01:00:00.000Z",
+    "EndTime": "2021-12-20T02:00:00.000Z",
+    "ScanBy": "TimestampAscending"
+}
+```
+
+```bash
+
+
+aws cloudwatch get-metric-data --cli-input-json file://queryfile.json | jq -r '.MetricDataResults[] | [.Timestamps, .Values] | transpose[] | @tsv'
+2021-12-20T01:00:00Z    4.775000973548611
+2021-12-20T01:01:00Z    2.441667500678241
+2021-12-20T01:02:00Z    2.4124989590034716
+2021-12-20T01:03:00Z    2.404144446150422
+2021-12-20T01:04:00Z    2.499898755659363
+2021-12-20T01:05:00Z    4.2960477896766385
+2021-12-20T01:06:00Z    2.337518819758107
+2021-12-20T01:07:00Z    2.370792640245325
+2021-12-20T01:08:00Z    2.3500197933021214
+2021-12-20T01:09:00Z    2.3958525003194495
+..
+.
+```
+
+
 
 #### List of CloudWatch Alarms and Status
 ```bash
