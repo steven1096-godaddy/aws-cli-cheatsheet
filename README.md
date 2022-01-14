@@ -323,7 +323,7 @@ aws ssm describe-parameters|jq -r '.Parameters[] | .Name'|grep -i rds
 #### Read SSM Parameter Value
 ```bash
 # pass the --with-decryption flag for SecureString types
-aws ssm get-parameter --with-decryption --name /thumplocal/Prod/RDS/MariaDB/password | jq -r '.Parameter | .Value'
+aws ssm get-parameter --with-decryption --name /customer/Prod/RDS/MariaDB/password | jq -r '.Parameter | .Value'
 P@$$w0ro1321
 ```
 
