@@ -9,6 +9,8 @@ A collection of some common AWS CLI calls I use regularly. It requires the use o
 
 ### Index
 
+- [Userdata](#userdata)
+    + [List Instance Userdata](#list-instance-userdata)
 - [EC2](#ec2)
     + [List Instance ID, Type and Name](#list-instance-id-type-and-name)
     + [List Instances with Public IP Address and Name](#list-instances-with-public-ip-address-and-name)
@@ -148,6 +150,25 @@ i-0b3b5128445a332db  t2.nano     robinson.com
 ```
 
 :point_right: Review the CLI Command Reference docs, in particular the output section, to get an idea of the response body, while working with JQ to parse through the output. 
+
+
+## Userdata
+
+#### List Instance Userdata
+```bash
+aws ec2 --region ${AWS_REGION} describe-instance-attribute --instance-id ${INSTANCE_ID} --attribute userData --output text --query "UserData.Value" | base64 --decode | less
+#!/bin/bash
+# ADMIN SSH KEY CRON
+cat > /etc/cron.d/ssh-key-cron <<CRON
+*/5 * * * *  root /usr/bin/python /opt/ssh_key_deploy.py --admin tools-managedoperationssshkeys
+0 * * * *  root /usr/bin/python /opt/ssh_key_deploy.py --host buildingmedia-prod-bases-customerprodsshkeys-gkjx4ctok34j
+*/5 * * * *  root /usr/bin/python /opt/ssh_key_deploy.py --user tools-managedoperationssshkeys tools-managedsupportsshkeys customer-prod-bases-customerprodsshkeys-gkjx4ctok53z
+CRON
+
+# RUN IMMEDIATE
+/usr/bin/python /opt/ssh_key_deploy.py  --admin tools-managedoperationssshkeys
+/usr/bin/python /opt/ssh_key_deploy.py  --host buildingmedia-prod-bases-customerprodsshkeys-gkjx4ctok53z
+```
 
 ## EC2
 
@@ -323,7 +344,7 @@ aws ssm describe-parameters|jq -r '.Parameters[] | .Name'|grep -i rds
 #### Read SSM Parameter Value
 ```bash
 # pass the --with-decryption flag for SecureString types
-aws ssm get-parameter --with-decryption --name /thumplocal/Prod/RDS/MariaDB/password | jq -r '.Parameter | .Value'
+aws ssm get-parameter --with-decryption --name /customer/Prod/RDS/MariaDB/password | jq -r '.Parameter | .Value'
 P@$$w0ro1321
 ```
 
@@ -649,16 +670,20 @@ aws route53 list-hosted-zones | jq -r '.HostedZones[]|.Id+" "+.Name'
 /hostedzone/ZEADEA0CO staywith.us.
 ```
 
+aws route53 list-hosted-zones | jq -r '.HostedZones[]|.Id+" "+.Name' | grep yoursite.com
+
 #### List Records for a Domain (Zone)
 
 ```bash
-aws route53 list-resource-record-sets --hosted-zone-id /hostedzone/Z08242601YGXFZ5Z94BU0 | jq -r '.ResourceRecordSets[]| if (.AliasTarget!=null) then .Type+" "+.Name+" "+.AliasTarget.DNSName else .Type+" "+.Name+" "+.ResourceRecords[].Value end'
+aws route53 list-resource-record-sets --hosted-zone-id /hostedzone/Z04884782N464Z5PXK3BU | jq -r '.ResourceRecordSets[]| if (.AliasTarget!=null) then .Type+" "+.Name+" "+.AliasTarget.DNSName else .Type+" "+.Name+" "+.ResourceRecords[].Value end'
 A      mysite.com.              dualstack.mysite-lb-967522168.ap-southeast-1.elb.amazonaws.com.
 A      mysite.com.              11.22.33.44
 TXT    _amazonses.mysite.com.   6c6d761371f0480bbe60de0df275b550
 A      test.mysite.com.         55.66.77.88
 CNAME  www.mysite.com.          mysite.com
 ```
+
+
 
 ## SNS
 
